@@ -45,6 +45,24 @@ func NewProvisioner(proxmoxClient *proxmox.Client) *Provisioner {
 func (p *Provisioner) ProvisionSteps() []provision.Step[*resources.Machine] {
 	return []provision.Step[*resources.Machine]{
 		provision.NewStep("pickNode", func(ctx context.Context, logger *zap.Logger, pctx provision.Context[*resources.Machine]) error {
+			// First, check if a node was explicitly specified in the provider data
+			var data Data
+
+			err := pctx.UnmarshalProviderData(&data)
+			if err != nil {
+				return err
+			}
+
+			// If a node was specified in the provider data, use it
+			if data.Node != "" {
+				pctx.State.TypedSpec().Value.Node = data.Node
+
+				logger.Info("using configured node for the Proxmox VM", zap.String("node", data.Node))
+
+				return nil
+			}
+
+			// Otherwise, automatically pick a node based on available memory
 			nodes, err := p.proxmoxClient.Nodes(ctx)
 			if err != nil {
 				return err
@@ -73,7 +91,7 @@ func (p *Provisioner) ProvisionSteps() []provision.Step[*resources.Machine] {
 
 			pctx.State.TypedSpec().Value.Node = nodeName
 
-			logger.Info("picked the node for the Proxmox VM", zap.String("node", nodeName))
+			logger.Info("automatically picked the node for the Proxmox VM", zap.String("node", nodeName))
 
 			return nil
 		}),
