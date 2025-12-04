@@ -24,7 +24,7 @@ ADD api/specs/specs.proto /api/specs/
 
 # base toolchain image
 FROM --platform=${BUILDPLATFORM} ${TOOLCHAIN} AS toolchain
-RUN apk --update --no-cache add bash build-base curl jq protoc protobuf-dev
+RUN apk --update --no-cache add bash build-base curl git jq protoc protobuf-dev
 
 # build tools
 FROM --platform=${BUILDPLATFORM} toolchain AS tools
